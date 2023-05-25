@@ -1,7 +1,6 @@
 use core::cmp::Ordering;
 
-use crate::{Source, LineError, rot_right};
-
+use crate::{rot_right, LineError, Source};
 
 #[derive(Debug)]
 pub struct Line<const C: usize> {

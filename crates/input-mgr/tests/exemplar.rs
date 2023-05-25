@@ -1,5 +1,5 @@
-use input_mgr::{RingLine, Source};
 use core::fmt::Write;
+use input_mgr::{RingLine, Source};
 use textwrap::dedent;
 
 #[test]
@@ -10,10 +10,13 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents to the user buffer
@@ -24,11 +27,14 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L# | hello from local!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents into the remote
@@ -39,12 +45,15 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             R# | hello from remote!
             L# | hello from local!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Mark the local contents as submitted
@@ -53,12 +62,15 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R# | hello from remote!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents to the user buffer
@@ -69,13 +81,16 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R# | hello from remote!
             L# | hello from local2!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Mark the remote contents as submitted
@@ -84,13 +99,16 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R. | hello from remote!
             L# | hello from local2!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents into the remote
@@ -101,14 +119,17 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R. | hello from remote!
             R# | hello from remote2!
             L# | hello from local2!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Mark the local contents as submitted
@@ -117,14 +138,17 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R. | hello from remote!
             L. | hello from local2!
             R# | hello from remote2!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Mark the remote contents as submitted
@@ -133,14 +157,17 @@ fn basic_usage() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | hello from local!
             R. | hello from remote!
             L. | hello from local2!
             R. | hello from remote2!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 }
 
@@ -159,11 +186,14 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L# | ....^....^....^
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents to the user buffer (30)
@@ -174,11 +204,14 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L# | ....^....^....^....^....^....^
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents to the user buffer (45)
@@ -197,11 +230,14 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents to the user buffer (90)
@@ -212,12 +248,15 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
             L# | ....^....^
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     // Push some contents into the remote
@@ -228,13 +267,16 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             R# | hello from remote!
             L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
             L# | ....^....^
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     ringline.submit_local_editing();
@@ -242,13 +284,16 @@ fn multiline() {
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
             L. | ....^....^
             R# | hello from remote!
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
 
     ringline.submit_remote_editing();
@@ -261,21 +306,28 @@ fn interleaved() {
 
     for i in 0..8 {
         // Push some contents into the remote
-        format!("hello from remote {i}").as_bytes().iter().for_each(|c| {
-            ringline.append_remote_char(*c).unwrap();
-        });
+        format!("hello from remote {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_remote_char(*c).unwrap();
+            });
         ringline.submit_remote_editing();
         // Push some contents into the local
-        format!("hello from local {i}").as_bytes().iter().for_each(|c| {
-            ringline.append_local_char(*c).unwrap();
-        });
+        format!("hello from local {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_local_char(*c).unwrap();
+            });
         ringline.submit_local_editing();
     }
 
     let dump = dump_to_string(&ringline);
     assert_eq!(
         dump,
-        dedent(r#"
+        dedent(
+            r#"
             ====
             R. | hello from remote 0
             L. | hello from local 0
@@ -294,9 +346,10 @@ fn interleaved() {
             R. | hello from remote 7
             L. | hello from local 7
             ====
-        "#).trim(),
+        "#
+        )
+        .trim(),
     );
-
 }
 
 fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
@@ -305,28 +358,46 @@ fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
     // Iterate through all the "latched" messages.
     //
     // These are newest to oldest! That is annoying!
-    for item in ringline.iter_history().map(|l| (l.status, l.as_str())).collect::<Vec<_>>().iter().rev() {
+    for item in ringline
+        .iter_history()
+        .map(|l| (l.status, l.as_str()))
+        .collect::<Vec<_>>()
+        .iter()
+        .rev()
+    {
         match item.0 {
             Source::Local => {
                 writeln!(&mut out, "L. | {}", item.1).unwrap();
-            },
+            }
             Source::Remote => {
                 writeln!(&mut out, "R. | {}", item.1).unwrap();
-            },
+            }
         }
     }
 
     // Then show the current "remote" working buffer
     //
     // These are newest to oldest! That is annoying!
-    for item in ringline.iter_remote_editing().map(|l| l.as_str()).collect::<Vec<_>>().iter().rev() {
+    for item in ringline
+        .iter_remote_editing()
+        .map(|l| l.as_str())
+        .collect::<Vec<_>>()
+        .iter()
+        .rev()
+    {
         writeln!(&mut out, "R# | {}", item).unwrap();
     }
 
     // Then show the current "local" working buffer
     //
     // These are newest to oldest! That is annoying!
-    for item in ringline.iter_local_editing().map(|l| l.as_str()).collect::<Vec<_>>().iter().rev() {
+    for item in ringline
+        .iter_local_editing()
+        .map(|l| l.as_str())
+        .collect::<Vec<_>>()
+        .iter()
+        .rev()
+    {
         writeln!(&mut out, "L# | {}", item).unwrap();
     }
 

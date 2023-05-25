@@ -1,11 +1,11 @@
 #![cfg_attr(not(test), no_std)]
 
-mod lines;
 mod bricks;
+mod lines;
 
-pub use lines::Line;
-pub use bricks::{BrickIter, BrickIterMut};
 use bricks::Bricks;
+pub use bricks::{BrickIter, BrickIterMut};
+pub use lines::Line;
 
 #[derive(Debug)]
 pub struct RingLine<const L: usize, const C: usize> {
@@ -150,7 +150,6 @@ impl<const L: usize, const C: usize> RingLine<L, C> {
         Some(cur)
     }
 }
-
 
 #[derive(Debug, PartialEq)]
 pub enum RingLineError {

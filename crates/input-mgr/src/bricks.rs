@@ -2,9 +2,8 @@ use core::{marker::PhantomData, ptr::NonNull};
 
 use crate::{rot_left, rot_right};
 
-
 #[derive(Debug, PartialEq)]
-pub (crate) struct Bricks<const L: usize> {
+pub(crate) struct Bricks<const L: usize> {
     idx_buf: [usize; L],
     user_editable_end: usize, //  0..ue
     inco_editable_end: usize, // ue..ie
@@ -180,7 +179,6 @@ impl<const L: usize> Bricks<L> {
         self.inco_editable_end = self.user_editable_end;
     }
 }
-
 
 #[cfg(test)]
 pub mod brick_tests {
