@@ -30,7 +30,7 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L# | hello from local!
+            L# | hello from local! |
             ====
         "#
         )
@@ -48,8 +48,8 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            R# | hello from remote!
-            L# | hello from local!
+            R# | hello from remote! |
+            L# | hello from local! |
             ====
         "#
         )
@@ -65,8 +65,8 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R# | hello from remote!
+            L. | hello from local! |
+            R# | hello from remote! |
             ====
         "#
         )
@@ -84,9 +84,9 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R# | hello from remote!
-            L# | hello from local2!
+            L. | hello from local! |
+            R# | hello from remote! |
+            L# | hello from local2! |
             ====
         "#
         )
@@ -102,9 +102,9 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R. | hello from remote!
-            L# | hello from local2!
+            L. | hello from local! |
+            R. | hello from remote! |
+            L# | hello from local2! |
             ====
         "#
         )
@@ -122,10 +122,10 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R. | hello from remote!
-            R# | hello from remote2!
-            L# | hello from local2!
+            L. | hello from local! |
+            R. | hello from remote! |
+            R# | hello from remote2! |
+            L# | hello from local2! |
             ====
         "#
         )
@@ -141,10 +141,10 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R. | hello from remote!
-            L. | hello from local2!
-            R# | hello from remote2!
+            L. | hello from local! |
+            R. | hello from remote! |
+            L. | hello from local2! |
+            R# | hello from remote2! |
             ====
         "#
         )
@@ -160,10 +160,288 @@ fn basic_usage() {
         dedent(
             r#"
             ====
-            L. | hello from local!
-            R. | hello from remote!
-            L. | hello from local2!
-            R. | hello from remote2!
+            L. | hello from local! |
+            R. | hello from remote! |
+            L. | hello from local2! |
+            R. | hello from remote2! |
+            ====
+        "#
+        )
+        .trim(),
+    );
+}
+
+#[test]
+fn wrap_pop() {
+    // Create a ringline buffer with 80 characters per line, and 6 lines
+    let mut ringline = RingLine::<6, 80>::new();
+
+    let fifteen_local = b"....^....^....^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_local.iter().for_each(|c| {
+            ringline.append_local_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    let fifteen_remote = b",,,,^,,,,^,,,,^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_remote.iter().for_each(|c| {
+            ringline.append_remote_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for _ in 0..10 {
+        ringline.pop_local_char();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# |  |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    ringline.pop_local_char();
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for _ in 0..10 {
+        ringline.pop_remote_char();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# |  |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    ringline.pop_remote_char();
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    ringline.submit_remote_editing();
+    ringline.submit_local_editing();
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    // ---
+
+
+    let fifteen_local = b"....^....^....^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_local.iter().for_each(|c| {
+            ringline.append_local_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    let fifteen_remote = b",,,,^,,,,^,,,,^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_remote.iter().for_each(|c| {
+            ringline.append_remote_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for _ in 0..10 {
+        ringline.pop_local_char();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# |  |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    ringline.pop_local_char();
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# | ,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for _ in 0..10 {
+        ringline.pop_remote_char();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            R# |  |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    ringline.pop_remote_char();
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
             ====
         "#
         )
@@ -189,7 +467,7 @@ fn multiline() {
         dedent(
             r#"
             ====
-            L# | ....^....^....^
+            L# | ....^....^....^ |
             ====
         "#
         )
@@ -207,7 +485,7 @@ fn multiline() {
         dedent(
             r#"
             ====
-            L# | ....^....^....^....^....^....^
+            L# | ....^....^....^....^....^....^ |
             ====
         "#
         )
@@ -233,7 +511,7 @@ fn multiline() {
         dedent(
             r#"
             ====
-            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
             ====
         "#
         )
@@ -251,8 +529,8 @@ fn multiline() {
         dedent(
             r#"
             ====
-            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
-            L# | ....^....^
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
             ====
         "#
         )
@@ -270,9 +548,9 @@ fn multiline() {
         dedent(
             r#"
             ====
-            R# | hello from remote!
-            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
-            L# | ....^....^
+            R# | hello from remote! |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
             ====
         "#
         )
@@ -287,9 +565,9 @@ fn multiline() {
         dedent(
             r#"
             ====
-            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^
-            L. | ....^....^
-            R# | hello from remote!
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L. | ....^....^ |
+            R# | hello from remote! |
             ====
         "#
         )
@@ -329,22 +607,22 @@ fn interleaved() {
         dedent(
             r#"
             ====
-            R. | hello from remote 0
-            L. | hello from local 0
-            R. | hello from remote 1
-            L. | hello from local 1
-            R. | hello from remote 2
-            L. | hello from local 2
-            R. | hello from remote 3
-            L. | hello from local 3
-            R. | hello from remote 4
-            L. | hello from local 4
-            R. | hello from remote 5
-            L. | hello from local 5
-            R. | hello from remote 6
-            L. | hello from local 6
-            R. | hello from remote 7
-            L. | hello from local 7
+            R. | hello from remote 0 |
+            L. | hello from local 0 |
+            R. | hello from remote 1 |
+            L. | hello from local 1 |
+            R. | hello from remote 2 |
+            L. | hello from local 2 |
+            R. | hello from remote 3 |
+            L. | hello from local 3 |
+            R. | hello from remote 4 |
+            L. | hello from local 4 |
+            R. | hello from remote 5 |
+            L. | hello from local 5 |
+            R. | hello from remote 6 |
+            L. | hello from local 6 |
+            R. | hello from remote 7 |
+            L. | hello from local 7 |
             ====
         "#
         )
@@ -352,7 +630,107 @@ fn interleaved() {
     );
 }
 
-fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
+#[test]
+fn overwrite() {
+    // Create a ringline buffer with 80 characters per line, and 16 lines
+    let mut ringline = RingLine::<16, 80>::new();
+
+    for i in 0..8 {
+        // Push some contents into the remote
+        format!("hello from remote {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_remote_char(*c).unwrap();
+            });
+        ringline.submit_remote_editing();
+        // Push some contents into the local
+        format!("hello from local {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_local_char(*c).unwrap();
+            });
+        ringline.submit_local_editing();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | hello from remote 0 |
+            L. | hello from local 0 |
+            R. | hello from remote 1 |
+            L. | hello from local 1 |
+            R. | hello from remote 2 |
+            L. | hello from local 2 |
+            R. | hello from remote 3 |
+            L. | hello from local 3 |
+            R. | hello from remote 4 |
+            L. | hello from local 4 |
+            R. | hello from remote 5 |
+            L. | hello from local 5 |
+            R. | hello from remote 6 |
+            L. | hello from local 6 |
+            R. | hello from remote 7 |
+            L. | hello from local 7 |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for i in 8..12 {
+        // Push some contents into the remote
+        format!("hello from remote {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_remote_char(*c).unwrap();
+            });
+        ringline.submit_remote_editing();
+        // Push some contents into the local
+        format!("hello from local {i}")
+            .as_bytes()
+            .iter()
+            .for_each(|c| {
+                ringline.append_local_char(*c).unwrap();
+            });
+        ringline.submit_local_editing();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | hello from remote 4 |
+            L. | hello from local 4 |
+            R. | hello from remote 5 |
+            L. | hello from local 5 |
+            R. | hello from remote 6 |
+            L. | hello from local 6 |
+            R. | hello from remote 7 |
+            L. | hello from local 7 |
+            R. | hello from remote 8 |
+            L. | hello from local 8 |
+            R. | hello from remote 9 |
+            L. | hello from local 9 |
+            R. | hello from remote 10 |
+            L. | hello from local 10 |
+            R. | hello from remote 11 |
+            L. | hello from local 11 |
+            ====
+        "#
+        )
+        .trim(),
+    );
+}
+
+fn dump_to_string<const L: usize, const C: usize>(ringline: &RingLine<L, C>) -> String {
     let mut out = String::new();
     writeln!(&mut out, "====").unwrap();
     // Iterate through all the "latched" messages.
@@ -360,17 +738,17 @@ fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
     // These are newest to oldest! That is annoying!
     for item in ringline
         .iter_history()
-        .map(|l| (l.status, l.as_str()))
+        .map(|l| (l.status(), l.as_str()))
         .collect::<Vec<_>>()
         .iter()
         .rev()
     {
         match item.0 {
             Source::Local => {
-                writeln!(&mut out, "L. | {}", item.1).unwrap();
+                writeln!(&mut out, "L. | {} |", item.1).unwrap();
             }
             Source::Remote => {
-                writeln!(&mut out, "R. | {}", item.1).unwrap();
+                writeln!(&mut out, "R. | {} |", item.1).unwrap();
             }
         }
     }
@@ -385,7 +763,7 @@ fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
         .iter()
         .rev()
     {
-        writeln!(&mut out, "R# | {}", item).unwrap();
+        writeln!(&mut out, "R# | {} |", item).unwrap();
     }
 
     // Then show the current "local" working buffer
@@ -398,7 +776,7 @@ fn dump_to_string(ringline: &RingLine<16, 80>) -> String {
         .iter()
         .rev()
     {
-        writeln!(&mut out, "L# | {}", item).unwrap();
+        writeln!(&mut out, "L# | {} |", item).unwrap();
     }
 
     write!(&mut out, "====").unwrap();

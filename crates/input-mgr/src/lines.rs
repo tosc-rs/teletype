@@ -1,3 +1,9 @@
+//! # Lines
+//!
+//! Lines generally act as a vector of ascii characters, with a fixed upper size.
+//!
+//! At the moment, lines must be <= 255 bytes long.
+
 use core::cmp::Ordering;
 
 use crate::{rot_right, LineError, Source};
@@ -6,7 +12,7 @@ use crate::{rot_right, LineError, Source};
 pub struct Line<const C: usize> {
     fill: u8,
     buf: [u8; C],
-    pub status: Source,
+    status: Source,
 }
 
 impl<const C: usize> Line<C> {
@@ -16,6 +22,14 @@ impl<const C: usize> Line<C> {
             buf: [0u8; C],
             status: Source::Local,
         }
+    }
+
+    pub fn status(&self) -> Source {
+        self.status
+    }
+
+    pub(crate) fn set_status(&mut self, source: Source) {
+        self.status = source;
     }
 
     pub fn clear(&mut self) {
