@@ -203,7 +203,12 @@ where
     disp.fill_solid(&full_display, style.background)?;
 
     for line in rline.iter_local_editing() {
-        y_idx -= char_pixels_y;
+        // Bail once we run out of screen
+        y_idx = match y_idx.checked_sub(char_pixels_y) {
+            Some(y) => y,
+            None => return Ok(()),
+        };
+
         let font_y = (y_idx + style.font.font.baseline) as i32;
 
         // Left gutter
@@ -226,7 +231,12 @@ where
     }
 
     for line in rline.iter_remote_editing() {
-        y_idx -= char_pixels_y;
+        // Bail once we run out of screen
+        y_idx = match y_idx.checked_sub(char_pixels_y) {
+            Some(y) => y,
+            None => return Ok(()),
+        };
+
         let font_y = (y_idx + style.font.font.baseline) as i32;
 
         // Left gutter
@@ -251,12 +261,16 @@ where
     // let local_hist_bkgd_style = PrimitiveStyleBuilder::new().fill_color(style.local_history_background).build();
     // let remote_hist_bkgd_style = PrimitiveStyleBuilder::new().fill_color(style.remote_history_background).build();
     for line in rline.iter_history() {
+        // Bail once we run out of screen
+        y_idx = match y_idx.checked_sub(char_pixels_y) {
+            Some(y) => y,
+            None => return Ok(()),
+        };
         let (lgutter, rgutter) = match line.status() {
             Source::Local => (">|", "|>"),
             Source::Remote => ("<|", "|<"),
         } ;
 
-        y_idx -= char_pixels_y;
         let font_y = (y_idx + style.font.font.baseline) as i32;
 
         // Left gutter
