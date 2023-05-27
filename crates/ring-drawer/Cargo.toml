@@ -17,5 +17,13 @@ optional = true
 path = "../input-mgr"
 
 [features]
-default = ["demo"]
+default = []
 demo = ["minifb"]
+
+[[bin]]
+name = "demo_bw"
+required-features = ["demo"]
+
+[[bin]]
+name = "demo_color"
+required-features = ["demo"]

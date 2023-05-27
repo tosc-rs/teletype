@@ -1,15 +1,4 @@
-// impl<C: PixelColor> StyledDrawable<PrimitiveStyle<C>> for Rectangle {
-//     type Color = C;
-//     type Output = ();
-
-//     fn draw_styled<D>(
-//         &self,
-//         style: &PrimitiveStyle<C>,
-//         target: &mut D,
-//     ) -> Result<Self::Output, D::Error>
-//     where
-//         D: DrawTarget<Color = C>,
-//     {
+#![cfg_attr(not(any(test, feature = "use-std")), no_std)]
 
 use embedded_graphics::{
     mono_font::MonoTextStyle,
