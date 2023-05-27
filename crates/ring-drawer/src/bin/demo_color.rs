@@ -60,19 +60,20 @@ fn main() {
         Window::new("Test - ESC to exit", DISP_PIXELS_X, DISP_PIXELS_Y, options).unwrap();
     window.limit_update_rate(Some(Duration::from_micros(1_000_000 / 60)));
 
-    let style = ring_drawer::Style {
+    let style = ring_drawer::ColorStyle {
         background: Rgb888::BLACK,
-        local_editing_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::BLUE),
-        remote_editing_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::CSS_INDIGO),
-        local_history_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::CSS_VIOLET),
-        remote_history_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::WHITE),
-        local_editing_background: Rgb888::RED,
-        remote_editing_background: Rgb888::CSS_ORANGE,
-        local_history_background: Rgb888::YELLOW,
-        remote_history_background: Rgb888::GREEN,
+        local_editing_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::WHITE),
+        remote_editing_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::WHITE),
+        local_history_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::BLACK),
+        remote_history_font: MonoTextStyle::new(&PROFONT_12_POINT, Rgb888::BLACK),
+        local_editing_background: Rgb888::CSS_DARK_BLUE,
+        remote_editing_background: Rgb888::CSS_DARK_GREEN,
+        local_history_background: Rgb888::CSS_LIGHT_BLUE,
+        remote_history_background: Rgb888::CSS_LIGHT_GREEN,
+        margin_chars: 1,
     };
 
-    let mut rline = RingLine::<16, 50>::new();
+    let mut rline = RingLine::<16, 48>::new();
 
     let mut timer = Instant::now();
     let mut ctr = -1;
@@ -88,7 +89,7 @@ fn main() {
                 _ => ctr = -1,
             }
         }
-        ring_drawer::drawer(&mut disp, &rline, style.clone()).unwrap();
+        ring_drawer::drawer_color(&mut disp, &rline, style.clone()).unwrap();
         window
             .update_with_buffer(&disp.pixels, DISP_PIXELS_X, DISP_PIXELS_Y)
             .unwrap();
