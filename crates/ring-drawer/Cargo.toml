@@ -1,0 +1,21 @@
+[package]
+name = "ring-drawer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+embedded-graphics = "0.7.1"
+profont = "0.6.1"
+
+[dependencies.minifb]
+version = "0.23.0"
+optional = true
+
+[dependencies.input-mgr]
+path = "../input-mgr"
+
+[features]
+default = ["demo"]
+demo = ["minifb"]
