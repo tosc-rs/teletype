@@ -50,11 +50,27 @@ impl<'a, const L: usize, I> Iterator for LineIter<'a, L, I> {
     }
 }
 
+impl<'a, const L: usize, I> DoubleEndedIterator for LineIter<'a, L, I> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let (now, remain) = self.bricks.split_last()?;
+        self.bricks = remain;
+        self.collection.get(*now)
+    }
+}
+
 impl<'a, 'b, const L: usize, I> Iterator for LineIterMut<'a, 'b, L, I> {
     type Item = &'b mut I;
 
     fn next(&mut self) -> Option<Self::Item> {
         let (now, remain) = self.bricks.split_first()?;
+        self.bricks = remain;
+        unsafe { Some(&mut *self.col_ptr.as_ptr().cast::<I>().add(*now)) }
+    }
+}
+
+impl<'a, 'b, const L: usize, I> DoubleEndedIterator for LineIterMut<'a, 'b, L, I> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let (now, remain) = self.bricks.split_last()?;
         self.bricks = remain;
         unsafe { Some(&mut *self.col_ptr.as_ptr().cast::<I>().add(*now)) }
     }
