@@ -1,5 +1,5 @@
 use core::fmt::Write;
-use input_mgr::{RingLine, Source};
+use input_mgr::{RingLine, Source, LineError};
 use textwrap::dedent;
 
 #[test]
@@ -169,6 +169,56 @@ fn basic_usage() {
         )
         .trim(),
     );
+}
+
+#[test]
+fn copy_local_editing() {
+    // Create a ringline buffer with 80 characters per line, and 6 lines
+    let mut ringline = RingLine::<6, 80>::new();
+
+    let fifteen_local = b"....^....^....^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_local.iter().for_each(|c| {
+            ringline.append_local_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    let mut buf = [0u8; 120];
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf).unwrap();
+    assert_eq!(ttl_len, 90);
+    assert_eq!(
+        b"....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^",
+        copied_used
+    );
+
+    let mut buf2 = [0u8; 60];
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf2);
+    assert_eq!(ttl_len, 90);
+    assert_eq!(Err(LineError::Full), copied_used);
+
+    ringline.submit_local_editing();
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf2).unwrap();
+    assert_eq!(b"", copied_used);
+    assert_eq!(ttl_len, 0);
 }
 
 #[test]

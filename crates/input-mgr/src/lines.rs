@@ -8,6 +8,16 @@ use core::cmp::Ordering;
 
 use crate::{rot_right, LineError, Source};
 
+/// A single line with fixed capacity for C characters
+///
+/// At the moment, `C` must be <= 255.
+///
+/// This [Line] acts more or less like a small, fixed size vector of ascii characters
+///
+/// Lines ONLY contain [valid ascii] characters, that are not [control characters].
+///
+/// [valid ascii]: u8::is_ascii()
+/// [control characters]: u8::is_ascii_control()
 #[derive(Debug)]
 pub struct Line<const C: usize> {
     fill: u8,
@@ -16,6 +26,7 @@ pub struct Line<const C: usize> {
 }
 
 impl<const C: usize> Line<C> {
+    /// Create a new empty line
     pub const fn new() -> Self {
         Self {
             fill: 0,
@@ -24,37 +35,48 @@ impl<const C: usize> Line<C> {
         }
     }
 
+    /// The source of the current line, either Local or Remote
     pub fn status(&self) -> Source {
         self.status
     }
 
+    /// Set the status (internal interface)
     pub(crate) fn set_status(&mut self, source: Source) {
         self.status = source;
     }
 
-    pub fn clear(&mut self) {
+    /// Clear the line (internal interface)
+    ///
+    /// NOTE: this is private because this line should only be cleared like this
+    /// when also updating the [Bricks] tracking information
+    pub(crate) fn clear(&mut self) {
         self.fill = 0;
         self.status = Source::Local;
     }
 
+    /// The currently used number of bytes in this line
     pub fn len(&self) -> usize {
         self.fill.into()
     }
 
+    /// Is the current line empty?
     pub fn is_empty(&self) -> bool {
         self.fill == 0
     }
 
+    /// Is the current line full?
     pub fn is_full(&self) -> bool {
         self.len() >= C
     }
 
+    /// Pop a character from the END of the line (if any)
     pub fn pop(&mut self) {
         if self.fill != 0 {
             self.fill -= 1;
         }
     }
 
+    /// Obtain the current line as a `&str`
     pub fn as_str(&self) -> &str {
         self.buf
             .get(..self.len())
@@ -70,6 +92,10 @@ impl<const C: usize> Line<C> {
         }
     }
 
+    /// Extend the current line with the given string slice.
+    ///
+    /// Returns an error if the provided slice would not fit, or if
+    /// any characters are invalid ascii or ascii control characters
     pub fn extend(&mut self, s: &str) -> Result<(), LineError> {
         let len = self.len();
 
@@ -84,6 +110,11 @@ impl<const C: usize> Line<C> {
         Ok(())
     }
 
+    /// Overwrite an ascii character at the given position
+    ///
+    /// Returns an error if the provided location would leave a gap (beyond the
+    /// end of the current line), or if the given character is invalid ascii or
+    /// an ascii control character
     pub fn overwrite(&mut self, pos: usize, ovrw: u8) -> Result<(), LineError> {
         if pos > self.len() || pos >= C {
             return Err(LineError::Full);
@@ -97,6 +128,7 @@ impl<const C: usize> Line<C> {
         Ok(())
     }
 
+    /// Returns an error if the line is full
     pub fn not_full(&self) -> Result<(), LineError> {
         if self.is_full() {
             Err(LineError::Full)
@@ -105,6 +137,10 @@ impl<const C: usize> Line<C> {
         }
     }
 
+    /// Push an ascii character to the end of the line
+    ///
+    /// Returns an error if the provided character would not fit, or if
+    /// the character is invalid ascii or an ascii control character
     pub fn push(&mut self, ins: u8) -> Result<(), LineError> {
         self.not_full()?;
         ascii_good(ins)?;
@@ -113,6 +149,11 @@ impl<const C: usize> Line<C> {
         Ok(())
     }
 
+    /// Insert an ascii character at the given position
+    ///
+    /// Returns an error if the provided location would leave a gap (beyond the
+    /// end of the current line), or if the given character is invalid ascii or
+    /// an ascii control character, or if the line is already full
     pub fn insert(&mut self, pos: usize, ins: u8) -> Result<(), LineError> {
         self.not_full()?;
 
