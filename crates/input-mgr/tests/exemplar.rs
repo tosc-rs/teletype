@@ -1,5 +1,5 @@
 use core::fmt::Write;
-use input_mgr::{RingLine, Source};
+use input_mgr::{RingLine, Source, LineError};
 use textwrap::dedent;
 
 #[test]
@@ -169,6 +169,56 @@ fn basic_usage() {
         )
         .trim(),
     );
+}
+
+#[test]
+fn copy_local_editing() {
+    // Create a ringline buffer with 80 characters per line, and 6 lines
+    let mut ringline = RingLine::<6, 80>::new();
+
+    let fifteen_local = b"....^....^....^";
+
+    // Push some contents to the user buffer (90)
+    for _ in 0..6 {
+        fifteen_local.iter().for_each(|c| {
+            ringline.append_local_char(*c).unwrap();
+        });
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            L# | ....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    let mut buf = [0u8; 120];
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf).unwrap();
+    assert_eq!(ttl_len, 90);
+    assert_eq!(
+        b"....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^",
+        copied_used
+    );
+
+    let mut buf2 = [0u8; 60];
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf2);
+    assert_eq!(ttl_len, 90);
+    assert_eq!(Err(LineError::Full), copied_used);
+
+    ringline.submit_local_editing();
+    let ttl_len = ringline.local_editing_len();
+    let copied_used = ringline.copy_local_editing_to(&mut buf2).unwrap();
+    assert_eq!(b"", copied_used);
+    assert_eq!(ttl_len, 0);
 }
 
 #[test]
@@ -442,6 +492,27 @@ fn wrap_pop() {
             L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
             R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
             L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            ====
+        "#
+        )
+        .trim(),
+    );
+
+    for _ in 0..10 {
+        ringline.pop_local_char();
+        ringline.pop_remote_char();
+    }
+
+    let dump = dump_to_string(&ringline);
+    assert_eq!(
+        dump,
+        dedent(
+            r#"
+            ====
+            R. | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L. | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
+            R# | ,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^,,,,^ |
+            L# | ....^....^....^....^....^....^....^....^....^....^....^....^....^....^ |
             ====
         "#
         )
@@ -735,48 +806,39 @@ fn dump_to_string<const L: usize, const C: usize>(ringline: &RingLine<L, C>) -> 
     writeln!(&mut out, "====").unwrap();
     // Iterate through all the "latched" messages.
     //
-    // These are newest to oldest! That is annoying!
+    // These are newest to oldest, so we reverse the iteration
     for item in ringline
         .iter_history()
-        .map(|l| (l.status(), l.as_str()))
-        .collect::<Vec<_>>()
-        .iter()
         .rev()
     {
-        match item.0 {
+        match item.status() {
             Source::Local => {
-                writeln!(&mut out, "L. | {} |", item.1).unwrap();
+                writeln!(&mut out, "L. | {} |", item.as_str()).unwrap();
             }
             Source::Remote => {
-                writeln!(&mut out, "R. | {} |", item.1).unwrap();
+                writeln!(&mut out, "R. | {} |", item.as_str()).unwrap();
             }
         }
     }
 
     // Then show the current "remote" working buffer
     //
-    // These are newest to oldest! That is annoying!
+    // These are newest to oldest, so we reverse the iteration
     for item in ringline
         .iter_remote_editing()
-        .map(|l| l.as_str())
-        .collect::<Vec<_>>()
-        .iter()
         .rev()
     {
-        writeln!(&mut out, "R# | {} |", item).unwrap();
+        writeln!(&mut out, "R# | {} |", item.as_str()).unwrap();
     }
 
     // Then show the current "local" working buffer
     //
-    // These are newest to oldest! That is annoying!
+    // These are newest to oldest, so we reverse the iteration
     for item in ringline
         .iter_local_editing()
-        .map(|l| l.as_str())
-        .collect::<Vec<_>>()
-        .iter()
         .rev()
     {
-        writeln!(&mut out, "L# | {} |", item).unwrap();
+        writeln!(&mut out, "L# | {} |", item.as_str()).unwrap();
     }
 
     write!(&mut out, "====").unwrap();

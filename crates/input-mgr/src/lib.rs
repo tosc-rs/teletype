@@ -77,31 +77,90 @@ impl<const L: usize, const C: usize> RingLine<L, C> {
 
     /// Iterates all "historical" (e.g. not currently editing) lines, NEWEST to OLDEST
     ///
-    /// Each line contans a status field that marks it as local or remote
+    /// Each line contans a status field that marks it as local or remote.
+    ///
+    /// The returned iterator implements [DoubleEndedIterator], and can be reversed with
+    /// [Iterator::rev()] to obtain lines in OLDEST to NEWEST order.
     pub fn iter_history(&self) -> LineIter<'_, L, Line<C>> {
         let Self { lines, brick } = self;
         brick.iter_history(lines)
     }
 
     /// Iterates any lines that are currently being edited by the remote end, NEWEST to OLDEST
+    ///
+    /// The returned iterator implements [DoubleEndedIterator], and can be reversed with
+    /// [Iterator::rev()] to obtain lines in OLDEST to NEWEST order.
     pub fn iter_remote_editing(&self) -> LineIter<'_, L, Line<C>> {
         let Self { lines, brick } = self;
         brick.iter_remote_editable(lines)
     }
 
+    /// The number of ascii characters/bytes currently used by the local editing buffer
+    pub fn local_editing_len(&self) -> usize {
+        self.iter_local_editing().map(|l| l.len()).sum()
+    }
+
+    /// The number of ascii characters/bytes currently used by the remote editing buffer
+    pub fn remote_editing_len(&self) -> usize {
+        self.iter_remote_editing().map(|l| l.len()).sum()
+    }
+
+    /// Attempt to copy the entire current local editing buffer to a provided slice
+    ///
+    /// Useful for obtaining the full user input prior to submitting the line.
+    ///
+    /// Returns an error if the provided slice is not large enough to contain the entire
+    /// local editing buffer contents. Otherwise, returns a subslice that contains the used
+    /// contents of the provided slice. The length of this slice will be the same as the
+    /// length returned by [RingLine::local_editing_len()].
+    ///
+    /// If you do not need the entire contents in a single slice, consider using
+    /// [RingLine::iter_local_editing()] and calling `rev()` to get the contents oldest
+    /// to newest.
+    pub fn copy_local_editing_to<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], LineError> {
+        // We want to iterate oldest to newest, so reverse the editing iterator
+        let lines = self.iter_local_editing().rev();
+        let buf_len = buffer.len();
+
+        // Take a sliding window of the "unused" portion of the provided buffer.
+        let mut window = &mut buffer[..];
+        for l in lines {
+            let needed = l.len();
+            if needed > window.len() {
+                return Err(LineError::Full);
+            }
+
+            let (now, later) = window.split_at_mut(needed);
+            window = later;
+            now.copy_from_slice(l.as_str().as_bytes());
+        }
+
+        let taken = buf_len - window.len();
+        Ok(&mut buffer[..taken])
+    }
+
     /// Iterates any lines that are currently being edited by the local end, NEWEST to OLDEST
+    ///
+    /// The returned iterator implements [DoubleEndedIterator], and can be reversed with
+    /// [Iterator::rev()] to obtain lines in OLDEST to NEWEST order.
     pub fn iter_local_editing(&self) -> LineIter<'_, L, Line<C>> {
         let Self { lines, brick } = self;
         brick.iter_local_editable(lines)
     }
 
     /// Iterates any lines that are currently being edited by the remote end, NEWEST to OLDEST
+    ///
+    /// The returned iterator implements [DoubleEndedIterator], and can be reversed with
+    /// [Iterator::rev()] to obtain lines in OLDEST to NEWEST order.
     pub fn iter_remote_editing_mut(&mut self) -> LineIterMut<'_, '_, L, Line<C>> {
         let Self { lines, brick } = self;
         brick.iter_remote_editable_mut(lines)
     }
 
     /// Iterates any lines that are currently being edited by the local end, NEWEST to OLDEST
+    ///
+    /// The returned iterator implements [DoubleEndedIterator], and can be reversed with
+    /// [Iterator::rev()] to obtain lines in OLDEST to NEWEST order.
     pub fn iter_local_editing_mut(&mut self) -> LineIterMut<'_, '_, L, Line<C>> {
         let Self { lines, brick } = self;
         brick.iter_local_editable_mut(lines)
